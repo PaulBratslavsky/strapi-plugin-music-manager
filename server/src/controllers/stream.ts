@@ -130,7 +130,8 @@ const stream = ({ strapi }) => ({
    */
   async serveEmbed(ctx) {
     const { song, theme, mode } = ctx.query;
-    const songAttr = song ? ` data-song="${String(song).replace(/"/g, '&quot;')}"` : '';
+    const songId = song ? String(song) : null;
+    const songAttr = songId ? ` data-song="${songId.replace(/"/g, '&quot;')}"` : '';
     const themeAttr = theme === 'dark' ? ' data-theme="dark"' : '';
     const themeClass = theme === 'dark' ? 'dark' : '';
 
@@ -145,6 +146,34 @@ const stream = ({ strapi }) => ({
       ? `${baseUrl}/api/strapi-plugin-music-manager/widget.js`
       : `${baseUrl}/api/strapi-plugin-music-manager/embed.js`;
 
+    // Fetch song metadata for OG tags
+    let ogTitle = 'Music Player';
+    let ogDescription = 'Listen now';
+    let ogImage = '';
+
+    if (songId) {
+      try {
+        const entry = await strapi.documents('plugin::strapi-plugin-music-manager.song').findOne({
+          documentId: songId,
+          populate: { artist: true, image: true },
+          status: 'published',
+        });
+        if (entry) {
+          ogTitle = entry.title || 'Music Player';
+          const artistName = (entry as any).artist?.name;
+          if (artistName) ogDescription = `by ${artistName}`;
+          const imageUrl = (entry as any).image?.url;
+          if (imageUrl) {
+            ogImage = imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`;
+          }
+        }
+      } catch {
+        // Fallback to defaults
+      }
+    }
+
+    const ogImageTag = ogImage ? `\n<meta property="og:image" content="${ogImage}"/>` : '';
+
     ctx.type = 'text/html';
     ctx.set('Access-Control-Allow-Origin', '*');
     ctx.set('Content-Security-Policy', 'frame-ancestors *');
@@ -154,7 +183,14 @@ const stream = ({ strapi }) => ({
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Music Player</title>
+<title>${ogTitle}</title>
+<meta property="og:title" content="${ogTitle}"/>
+<meta property="og:description" content="${ogDescription}"/>
+<meta property="og:type" content="music.song"/>${ogImageTag}
+<meta property="og:url" content="${baseUrl}/api/strapi-plugin-music-manager/embed?song=${songId || ''}"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="${ogTitle}"/>
+<meta name="twitter:description" content="${ogDescription}"/>${ogImageTag ? ogImageTag.replace('og:image', 'twitter:image') : ''}
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;font-family:system-ui,sans-serif}
