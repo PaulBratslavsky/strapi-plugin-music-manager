@@ -25,6 +25,7 @@ const stream = ({ strapi }) => ({
     const entry = await strapi.documents('plugin::strapi-plugin-music-manager.song').findOne({
       documentId: id,
       populate: { audio: true },
+      status: 'published',
     });
 
     if (!entry?.audio?.url) {
