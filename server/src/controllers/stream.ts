@@ -12,6 +12,7 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 let widgetCache: string | null = null;
+let embedCache: string | null = null;
 
 /**
  * Check if a URL is a remote (absolute) URL vs a local relative path.
@@ -121,6 +122,82 @@ const stream = ({ strapi }) => ({
     ctx.set('Cache-Control', process.env.NODE_ENV === 'development' ? 'no-cache' : 'public, max-age=3600');
     ctx.set('Access-Control-Allow-Origin', '*');
     ctx.body = widgetCache;
+  },
+
+  /**
+   * Serve an embeddable HTML page with the music player widget.
+   * GET /embed?song=documentId&theme=dark
+   */
+  async serveEmbed(ctx) {
+    const { song, theme, mode } = ctx.query;
+    const songAttr = song ? ` data-song="${String(song).replace(/"/g, '&quot;')}"` : '';
+    const themeAttr = theme === 'dark' ? ' data-theme="dark"' : '';
+    const themeClass = theme === 'dark' ? 'dark' : '';
+
+    // Build script URLs from the current request
+    const proto = ctx.request.headers['x-forwarded-proto'] || ctx.protocol;
+    const host = ctx.request.headers['x-forwarded-host'] || ctx.request.host;
+    const baseUrl = `${proto}://${host}`;
+
+    // mode=full uses the full widget, default uses the single-song embed
+    const isFullMode = mode === 'full';
+    const scriptUrl = isFullMode
+      ? `${baseUrl}/api/strapi-plugin-music-manager/widget.js`
+      : `${baseUrl}/api/strapi-plugin-music-manager/embed.js`;
+
+    ctx.type = 'text/html';
+    ctx.set('Access-Control-Allow-Origin', '*');
+    ctx.set('Content-Security-Policy', 'frame-ancestors *');
+    ctx.set('X-Frame-Options', 'ALLOWALL');
+    ctx.body = `<!DOCTYPE html>
+<html lang="en" class="${themeClass}">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Music Player</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:system-ui,sans-serif}
+body{background:transparent}
+</style>
+</head>
+<body>
+<script src="${scriptUrl}"${songAttr}${themeAttr}></script>
+</body>
+</html>`;
+  },
+
+  /**
+   * Serve the single-song embed JavaScript bundle.
+   * GET /embed.js
+   */
+  async serveEmbedJs(ctx) {
+    const pluginRoot = path.resolve(__dirname, '..', '..');
+    const embedPath = path.join(pluginRoot, 'dist', 'widget', 'embed.js');
+
+    if (!fs.existsSync(embedPath)) {
+      ctx.status = 404;
+      ctx.type = 'application/javascript';
+      ctx.body = '// Embed not built. Run: npm run build:embed';
+      return;
+    }
+
+    if (!embedCache || process.env.NODE_ENV === 'development') {
+      try {
+        embedCache = fs.readFileSync(embedPath, 'utf-8');
+      } catch (error) {
+        strapi.log.error('Failed to read embed file:', error);
+        ctx.status = 500;
+        ctx.type = 'application/javascript';
+        ctx.body = '// Error loading embed';
+        return;
+      }
+    }
+
+    ctx.type = 'application/javascript';
+    ctx.set('Cache-Control', process.env.NODE_ENV === 'development' ? 'no-cache' : 'public, max-age=3600');
+    ctx.set('Access-Control-Allow-Origin', '*');
+    ctx.body = embedCache;
   },
 
   /**

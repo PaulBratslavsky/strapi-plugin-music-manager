@@ -33,9 +33,11 @@
   },
   "files": ["dist"],
   "scripts": {
-    "build": "strapi-plugin build && npm run build:widget",
+    "build": "strapi-plugin build && npm run build:widget && npm run build:embed",
     "build:widget": "vite build --config widget/vite.config.mts",
+    "build:embed": "vite build --config widget/vite.embed.mts",
     "dev:widget": "vite build --config widget/vite.config.mts --watch",
+    "dev:embed": "vite build --config widget/vite.embed.mts --watch",
     "watch": "strapi-plugin watch",
     "watch:link": "strapi-plugin watch:link",
     "verify": "strapi-plugin verify",

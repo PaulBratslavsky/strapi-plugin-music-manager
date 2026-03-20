@@ -1,0 +1,163 @@
+.sse-root {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  min-height: 100px;
+}
+
+.dark .sse-root {
+  background: #0a0a0a;
+  color: #fff;
+}
+
+.sse-loading {
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 14px;
+}
+
+/* Cover art */
+.sse-art {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f0f0f0;
+  align-self: center;
+}
+
+.dark .sse-art {
+  background: #1a1a1a;
+}
+
+.sse-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sse-art-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: #ccc;
+}
+
+/* Body */
+.sse-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Top row */
+.sse-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sse-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sse-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dark .sse-title {
+  color: #fff;
+}
+
+.sse-artist {
+  font-size: 12px;
+  color: rgb(236 72 153);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Play button */
+.sse-play {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgb(236 72 153);
+  background: none;
+  color: rgb(236 72 153);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.sse-play:hover {
+  background: rgba(236, 72, 153, 0.1);
+}
+
+.sse-play:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Waveform */
+.sse-waveform-wrap {
+  width: 100%;
+  min-height: 48px;
+}
+
+.sse-waveform {
+  width: 100%;
+  height: 48px;
+}
+
+/* Time */
+.sse-time {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #999;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Spinner */
+.sse-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgb(236 72 153);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: sse-spin 0.6s linear infinite;
+  display: inline-block;
+}
+
+@keyframes sse-spin {
+  to { transform: rotate(360deg); }
+}

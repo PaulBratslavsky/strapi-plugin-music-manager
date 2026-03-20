@@ -4,6 +4,8 @@ import WaveSurfer from 'wavesurfer.js'
 interface UseWaveSurferOptions {
   audioRef: React.RefObject<HTMLAudioElement | null>
   documentId: string | undefined
+  peaks: number[] | null | undefined
+  duration: number | null | undefined
   shouldAutoPlay: React.MutableRefObject<boolean>
   isPlayingRef: React.MutableRefObject<boolean>
   getStreamURL: (documentId: string) => string
@@ -14,6 +16,8 @@ interface UseWaveSurferOptions {
 export function useWaveSurfer({
   audioRef,
   documentId,
+  peaks,
+  duration: songDuration,
   shouldAutoPlay,
   isPlayingRef,
   getStreamURL,
@@ -26,6 +30,9 @@ export function useWaveSurfer({
   const waveElRef = useRef<HTMLDivElement | null>(null)
   // Track current documentId to detect song changes
   const currentDocIdRef = useRef<string | undefined>(undefined)
+  // Track current peaks and duration
+  const currentPeaksRef = useRef<number[] | null | undefined>(undefined)
+  const currentDurationRef = useRef<number | null | undefined>(undefined)
   // Track if we need to init
   const needsInitRef = useRef(false)
 
@@ -49,6 +56,11 @@ export function useWaveSurfer({
     setSongLoading(true)
     needsInitRef.current = false
 
+    // Set the audio source for streaming playback
+    audio.src = getStreamURL(docId)
+
+    const hasPeaks = currentPeaksRef.current && currentPeaksRef.current.length > 0
+
     const ws = WaveSurfer.create({
       container,
       height: 80,
@@ -61,7 +73,11 @@ export function useWaveSurfer({
       cursorWidth: 0,
       interact: false,
       barAlign: 'bottom' as const,
-      url: getStreamURL(docId),
+      // Use peaks + duration if available — avoids downloading the full audio for waveform
+      peaks: hasPeaks ? [currentPeaksRef.current!] : undefined,
+      duration: hasPeaks && currentDurationRef.current ? currentDurationRef.current : undefined,
+      // Only fetch audio for waveform if no peaks data
+      url: hasPeaks ? undefined : getStreamURL(docId),
       media: audio,
     })
 
@@ -97,7 +113,6 @@ export function useWaveSurfer({
     // only handles 'ready' (for autoplay + duration) and 'finish'.
     // This avoids stale values when WaveSurfer is alive but DOM-detached.
     ws.on('ready', () => {
-      console.log('[MusicWidget] ws ready, duration:', ws.getDuration())
       setSongLoading(false)
       onReady(ws.getDuration())
       if (autoPlay) {
@@ -112,6 +127,8 @@ export function useWaveSurfer({
   // When documentId changes, re-init or mark for lazy init
   useEffect(() => {
     currentDocIdRef.current = documentId
+    currentPeaksRef.current = peaks
+    currentDurationRef.current = songDuration
     if (waveElRef.current && audioRef.current && documentId) {
       initWaveSurfer()
     } else {

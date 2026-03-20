@@ -37,17 +37,17 @@ const register = ({ strapi }: { strapi: Core.Strapi }) => {
     if (!entry?.audio?.url) return result;
 
     try {
-      const peaks = await strapi
+      const analysis = await strapi
         .plugin('strapi-plugin-music-manager')
         .service('peaks')
         .computePeaksFromUrl(entry.audio.url);
 
       await strapi.db.query('plugin::strapi-plugin-music-manager.song').updateMany({
         where: { documentId: doc.documentId },
-        data: { peaks },
+        data: { peaks: analysis.peaks, duration: analysis.duration },
       });
 
-      strapi.log.info(`[music-manager] Generated peaks for "${entry.title}"`);
+      strapi.log.info(`[music-manager] Generated peaks + duration for "${entry.title}" (${analysis.duration}s)`);
     } catch (err) {
       strapi.log.error(`[music-manager] Failed to generate peaks: ${err}`);
     }

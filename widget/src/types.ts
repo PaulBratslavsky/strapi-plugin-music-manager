@@ -19,6 +19,7 @@ export interface Song {
   image?: StrapiMedia | null
   artist?: Artist | null
   peaks?: number[] | null
+  duration?: number | null
 }
 
 export type LoopMode = 'none' | 'all' | 'one'

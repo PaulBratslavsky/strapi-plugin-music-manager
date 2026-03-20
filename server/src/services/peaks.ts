@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 
-const NUM_PEAKS = 200;
+const NUM_PEAKS = 1000;
 
 function isRemoteUrl(url: string): boolean {
   return url.startsWith('http://') || url.startsWith('https://');
@@ -14,14 +14,20 @@ async function fetchBuffer(url: string): Promise<Buffer> {
   return Buffer.from(arrayBuffer);
 }
 
-async function computePeaksFromBuffer(buffer: Buffer): Promise<number[]> {
+export interface AudioAnalysis {
+  peaks: number[];
+  duration: number;
+}
+
+async function analyzeAudioBuffer(buffer: Buffer): Promise<AudioAnalysis> {
   const { default: decode } = await import('audio-decode');
 
   const audioBuffer = await decode(buffer);
   const channelData = audioBuffer.getChannelData(0);
   const samples = channelData.length;
+  const duration = audioBuffer.duration;
 
-  if (samples === 0) return Array(NUM_PEAKS).fill(0);
+  if (samples === 0) return { peaks: Array(NUM_PEAKS).fill(0), duration };
 
   const samplesPerPeak = Math.max(1, Math.floor(samples / NUM_PEAKS));
 
@@ -40,9 +46,10 @@ async function computePeaksFromBuffer(buffer: Buffer): Promise<number[]> {
   }
 
   const maxRms = Math.max(...rmsValues);
-  if (maxRms === 0) return Array(NUM_PEAKS).fill(0);
+  if (maxRms === 0) return { peaks: Array(NUM_PEAKS).fill(0), duration };
 
-  return rmsValues.map((v) => Math.round((v / maxRms) * 1000) / 1000);
+  const peaks = rmsValues.map((v) => Math.round((v / maxRms) * 1000) / 1000);
+  return { peaks, duration: Math.round(duration * 100) / 100 };
 }
 
 /**
@@ -70,24 +77,25 @@ interface SongWithAudio {
   documentId: string;
   title?: string;
   peaks?: unknown;
+  duration?: number | null;
   audio?: {
     url: string;
   } | null;
 }
 
 const peaks = ({ strapi }) => ({
-  async computePeaksFromFile(filePath: string): Promise<number[]> {
+  async computePeaksFromFile(filePath: string): Promise<AudioAnalysis> {
     const buffer = fs.readFileSync(filePath);
-    return computePeaksFromBuffer(buffer);
+    return analyzeAudioBuffer(buffer);
   },
 
-  async computePeaksFromUrl(audioUrl: string): Promise<number[]> {
+  async computePeaksFromUrl(audioUrl: string): Promise<AudioAnalysis> {
     const buffer = await resolveAudioBuffer(audioUrl, strapi);
     if (!buffer) throw new Error(`Could not resolve audio: ${audioUrl}`);
-    return computePeaksFromBuffer(buffer);
+    return analyzeAudioBuffer(buffer);
   },
 
-  async computePeaksForSong(documentId: string): Promise<number[] | null> {
+  async computePeaksForSong(documentId: string): Promise<AudioAnalysis | null> {
     const entry = await strapi.documents('plugin::strapi-plugin-music-manager.song').findOne({
       documentId,
       populate: { audio: true },
@@ -98,7 +106,7 @@ const peaks = ({ strapi }) => ({
     const buffer = await resolveAudioBuffer(entry.audio.url, strapi);
     if (!buffer) return null;
 
-    return computePeaksFromBuffer(buffer);
+    return analyzeAudioBuffer(buffer);
   },
 
   async generateMissingPeaks(force = false) {
@@ -129,15 +137,15 @@ const peaks = ({ strapi }) => ({
           continue;
         }
 
-        const peaksData = await computePeaksFromBuffer(buffer);
+        const analysis = await analyzeAudioBuffer(buffer);
 
         await strapi.db.query('plugin::strapi-plugin-music-manager.song').updateMany({
           where: { documentId: song.documentId },
-          data: { peaks: peaksData },
+          data: { peaks: analysis.peaks, duration: analysis.duration },
         });
 
         generated++;
-        strapi.log.info(`[peaks] Generated peaks for "${song.title}"`);
+        strapi.log.info(`[peaks] Generated peaks + duration for "${song.title}" (${analysis.duration}s)`);
       } catch (err) {
         strapi.log.error(`[peaks] Failed to generate peaks for "${song.title}": ${err}`);
       }

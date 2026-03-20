@@ -43,18 +43,18 @@ export function usePlayerState({ strapiUrl, initialSong }: UsePlayerStateOptions
     })
   }, [strapiUrl, initialSong])
 
-  // Preload durations
+  // Use pre-computed durations from API data
   useEffect(() => {
-    songs.forEach((song) => {
-      if (durations[song.documentId]) return
-      const audio = new Audio()
-      audio.preload = 'metadata'
-      audio.addEventListener('loadedmetadata', () => {
-        setDurations((prev) => ({ ...prev, [song.documentId]: audio.duration }))
-      })
-      audio.src = getStreamURL(song.documentId)
-    })
-  }, [songs]) // eslint-disable-line react-hooks/exhaustive-deps
+    const precomputed: Record<string, number> = {}
+    for (const song of songs) {
+      if (song.duration) {
+        precomputed[song.documentId] = song.duration
+      }
+    }
+    if (Object.keys(precomputed).length > 0) {
+      setDurations((prev) => ({ ...prev, ...precomputed }))
+    }
+  }, [songs])
 
   // ── Ref syncs ──
 
@@ -66,6 +66,8 @@ export function usePlayerState({ strapiUrl, initialSong }: UsePlayerStateOptions
   const { wavesurferRef, songLoading, waveformSlotRef } = useWaveSurfer({
     audioRef,
     documentId: currentSong?.documentId,
+    peaks: currentSong?.peaks,
+    duration: currentSong?.duration,
     shouldAutoPlay: shouldAutoPlayRef,
     isPlayingRef,
     getStreamURL,

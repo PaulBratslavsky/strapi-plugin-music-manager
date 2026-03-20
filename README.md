@@ -48,7 +48,8 @@ The plugin registers two collection types:
 | `artist` | Relation | Many-to-one relation with Artist         |
 | `image`  | Media    | Cover art                                |
 | `audio`  | Media    | Audio file (MP3, WAV, OGG, FLAC, etc.)  |
-| `peaks`  | JSON     | Waveform peak data (auto-generated)      |
+| `peaks`    | JSON     | Waveform peak data (auto-generated)      |
+| `duration` | Float    | Track duration in seconds (auto-generated)|
 
 ### Artist
 
@@ -72,6 +73,7 @@ All endpoints are under `/api/strapi-plugin-music-manager`.
 | GET    | `/artists/:id`          | Get a single artist                      |
 | POST   | `/songs/generate-peaks` | Batch generate waveform peaks            |
 | GET    | `/widget.js`            | Serve the embeddable player widget       |
+| GET    | `/embed`                | Embeddable HTML page (for iframes)       |
 
 ### Generate peaks
 
@@ -143,6 +145,49 @@ The widget auto-detects the Strapi URL from the script `src` attribute.
 - Music continues playing when switching between views
 - Style-isolated with scoped CSS (no conflicts with the host page)
 - ~77 KB gzipped
+
+### Iframe embed
+
+For environments where a `<script>` tag isn't suitable, use an iframe:
+
+```html
+<iframe
+  src="https://your-strapi.com/api/strapi-plugin-music-manager/embed"
+  width="100%"
+  height="500"
+  frameborder="0"
+></iframe>
+```
+
+Query parameters:
+
+| Param   | Description                          |
+| ------- | ------------------------------------ |
+| `song`  | Document ID to auto-select a song    |
+| `theme` | `dark` for dark mode                 |
+
+### Native audio embed
+
+Each song can be embedded as a standard HTML audio element using the stream URL:
+
+```html
+<audio controls preload="none">
+  <source src="https://your-strapi.com/api/strapi-plugin-music-manager/songs/DOCUMENT_ID/stream" />
+</audio>
+```
+
+## Streaming Performance
+
+The plugin uses HTTP streaming for audio playback — audio is fetched progressively in chunks, not downloaded entirely before playing. Pre-computed waveform peaks and duration eliminate the need to download audio for metadata.
+
+### Roadmap
+
+- [ ] **Auto-transcode to MP3** — Convert uploaded WAV/FLAC files to compressed MP3 (320kbps) on upload using ffmpeg, reducing file sizes by ~10x
+- [ ] **Multiple quality tiers** — Generate 128kbps, 256kbps, 320kbps variants and serve the appropriate one based on client bandwidth
+- [ ] **Adaptive quality switching** — Client-side bandwidth detection (`navigator.connection.downlink`) to auto-select quality tier
+- [ ] **Next-song prefetch** — Preload the first few seconds of the next song in the playlist for seamless transitions
+- [ ] **Service Worker caching** — Cache recently played tracks for offline playback and instant replays
+- [ ] **Proper Cache-Control headers** — Set cache headers on stream responses so browsers and CDNs cache audio efficiently
 
 ## Development
 

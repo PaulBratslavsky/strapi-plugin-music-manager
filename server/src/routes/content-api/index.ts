@@ -52,6 +52,22 @@ export default {
       },
     },
     {
+      method: 'GET',
+      path: '/embed',
+      handler: 'stream.serveEmbed',
+      config: {
+        policies: [],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/embed.js',
+      handler: 'stream.serveEmbedJs',
+      config: {
+        policies: [],
+      },
+    },
+    {
       method: 'POST',
       path: '/songs/generate-peaks',
       handler: 'stream.generatePeaks',
