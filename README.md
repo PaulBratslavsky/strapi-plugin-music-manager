@@ -95,7 +95,42 @@ To make songs and artists available without authentication, enable public permis
 
 **Settings > Roles > Public > strapi-plugin-music-manager**
 
-Enable `find` and `findOne` for both Song and Artist, plus `streamAudio`, `serveWidget`, and `generatePeaks` as needed.
+Enable `find` and `findOne` for both Song and Artist, plus `streamAudio`, `serveWidget`, `serveEmbed`, `serveEmbedJs`, and `generatePeaks` as needed.
+
+### CORS & iframe embedding
+
+For the embeddable widget and iframe embed to work from any website, update your Strapi middleware config to allow all origins:
+
+```ts
+// config/middlewares.ts (or config/env/production/middlewares.ts)
+export default [
+  // ...
+  {
+    name: "strapi::security",
+    config: {
+      contentSecurityPolicy: {
+        directives: {
+          "frame-ancestors": ["*"], // Allow iframe embedding from any site
+        },
+      },
+    },
+  },
+  {
+    name: "strapi::cors",
+    config: {
+      origin: "*", // Allow API requests from any origin (needed for widget/embed)
+    },
+  },
+  // ...
+];
+```
+
+If you prefer to restrict access, replace `"*"` with specific domains:
+
+```ts
+"frame-ancestors": ["'self'", "https://your-website.com"],
+origin: ["https://your-website.com", "http://localhost:3000"],
+```
 
 ## Custom Field
 
