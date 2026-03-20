@@ -1,0 +1,68 @@
+{
+  "name": "strapi-plugin-music-manager",
+  "version": "0.0.5",
+  "description": "A custom field plugin for uploading, managing, and streaming music with waveform visualization",
+  "keywords": [],
+  "type": "commonjs",
+  "exports": {
+    "./package.json": "./package.json",
+    "./strapi-admin": {
+      "types": "./dist/admin/src/index.d.ts",
+      "source": "./admin/src/index.ts",
+      "import": "./dist/admin/index.mjs",
+      "require": "./dist/admin/index.js",
+      "default": "./dist/admin/index.js"
+    },
+    "./strapi-server": {
+      "types": "./dist/server/src/index.d.ts",
+      "source": "./server/src/index.ts",
+      "import": "./dist/server/index.mjs",
+      "require": "./dist/server/index.js",
+      "default": "./dist/server/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "strapi-plugin build",
+    "watch": "strapi-plugin watch",
+    "watch:link": "strapi-plugin watch:link",
+    "verify": "strapi-plugin verify",
+    "test:ts:front": "run -T tsc -p admin/tsconfig.json",
+    "test:ts:back": "run -T tsc -p server/tsconfig.json"
+  },
+  "dependencies": {
+    "audio-decode": "^2.2.3"
+  },
+  "devDependencies": {
+    "@strapi/strapi": "*",
+    "@strapi/sdk-plugin": "*",
+    "@strapi/design-system": "*",
+    "@strapi/icons": "*",
+    "@strapi/typescript-utils": "*",
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "prettier": "*",
+    "react": "^17.0.0 || ^18.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0",
+    "react-intl": "^6.0.0",
+    "react-router-dom": "^6.0.0",
+    "styled-components": "^6.0.0",
+    "typescript": "*"
+  },
+  "peerDependencies": {
+    "@strapi/strapi": "^5.0.0",
+    "@strapi/sdk-plugin": "^6.0.0",
+    "@strapi/design-system": "*",
+    "@strapi/icons": "*",
+    "react": "^17.0.0 || ^18.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0",
+    "react-intl": "^6.0.0",
+    "react-router-dom": "^6.0.0",
+    "styled-components": "^6.0.0"
+  },
+  "strapi": {
+    "kind": "plugin",
+    "name": "strapi-plugin-music-manager",
+    "displayName": "Music Manager"
+  }
+}

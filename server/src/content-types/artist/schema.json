@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "music_manager_artists",
+  "info": {
+    "singularName": "artist",
+    "pluralName": "artists",
+    "displayName": "Artist",
+    "description": "A music artist or band"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "bio": {
+      "type": "text"
+    },
+    "image": {
+      "allowedTypes": ["images"],
+      "type": "media",
+      "multiple": false
+    },
+    "songs": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "plugin::strapi-plugin-music-manager.song",
+      "mappedBy": "artist"
+    }
+  }
+}
