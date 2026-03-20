@@ -1,6 +1,4 @@
 import type { Core } from "@strapi/strapi";
-import path from 'node:path';
-import fs from 'node:fs';
 
 const register = ({ strapi }: { strapi: Core.Strapi }) => {
   // Register the custom field for admin UI
@@ -19,7 +17,7 @@ const register = ({ strapi }: { strapi: Core.Strapi }) => {
     const result = await next();
 
     if (context.uid !== 'plugin::strapi-plugin-music-manager.song') return result;
-    if (!['create', 'update'].includes(context.action)) return result;
+    if (!['create', 'update', 'publish'].includes(context.action)) return result;
 
     if (!result || typeof result !== 'object' || Array.isArray(result)) return result;
     const doc = result as Record<string, any>;
@@ -38,17 +36,11 @@ const register = ({ strapi }: { strapi: Core.Strapi }) => {
 
     if (!entry?.audio?.url) return result;
 
-    const uploadsDir = path.join(strapi.dirs.static.public, 'uploads');
-    const fileName = path.basename(entry.audio.url);
-    const filePath = path.join(uploadsDir, fileName);
-
-    if (!fs.existsSync(filePath)) return result;
-
     try {
       const peaks = await strapi
         .plugin('strapi-plugin-music-manager')
         .service('peaks')
-        .computePeaksFromFile(filePath);
+        .computePeaksFromUrl(entry.audio.url);
 
       await strapi.db.query('plugin::strapi-plugin-music-manager.song').updateMany({
         where: { documentId: doc.documentId },

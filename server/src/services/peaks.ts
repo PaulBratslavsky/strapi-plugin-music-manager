@@ -3,6 +3,17 @@ import fs from 'node:fs';
 
 const NUM_PEAKS = 200;
 
+function isRemoteUrl(url: string): boolean {
+  return url.startsWith('http://') || url.startsWith('https://');
+}
+
+async function fetchBuffer(url: string): Promise<Buffer> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  const arrayBuffer = await response.arrayBuffer();
+  return Buffer.from(arrayBuffer);
+}
+
 async function computePeaksFromBuffer(buffer: Buffer): Promise<number[]> {
   const { default: decode } = await import('audio-decode');
 
@@ -34,6 +45,27 @@ async function computePeaksFromBuffer(buffer: Buffer): Promise<number[]> {
   return rmsValues.map((v) => Math.round((v / maxRms) * 1000) / 1000);
 }
 
+/**
+ * Resolve an audio URL to a Buffer — works for both local files and remote URLs.
+ */
+async function resolveAudioBuffer(audioUrl: string, strapi: any): Promise<Buffer | null> {
+  if (isRemoteUrl(audioUrl)) {
+    try {
+      return await fetchBuffer(audioUrl);
+    } catch (err) {
+      strapi.log.error(`[peaks] Failed to download remote audio: ${err}`);
+      return null;
+    }
+  }
+
+  const uploadsDir = path.join(strapi.dirs.static.public, 'uploads');
+  const fileName = path.basename(audioUrl);
+  const filePath = path.join(uploadsDir, fileName);
+
+  if (!fs.existsSync(filePath)) return null;
+  return fs.readFileSync(filePath);
+}
+
 interface SongWithAudio {
   documentId: string;
   title?: string;
@@ -49,6 +81,12 @@ const peaks = ({ strapi }) => ({
     return computePeaksFromBuffer(buffer);
   },
 
+  async computePeaksFromUrl(audioUrl: string): Promise<number[]> {
+    const buffer = await resolveAudioBuffer(audioUrl, strapi);
+    if (!buffer) throw new Error(`Could not resolve audio: ${audioUrl}`);
+    return computePeaksFromBuffer(buffer);
+  },
+
   async computePeaksForSong(documentId: string): Promise<number[] | null> {
     const entry = await strapi.documents('plugin::strapi-plugin-music-manager.song').findOne({
       documentId,
@@ -57,13 +95,9 @@ const peaks = ({ strapi }) => ({
 
     if (!entry?.audio?.url) return null;
 
-    const uploadsDir = path.join(strapi.dirs.static.public, 'uploads');
-    const fileName = path.basename(entry.audio.url);
-    const filePath = path.join(uploadsDir, fileName);
+    const buffer = await resolveAudioBuffer(entry.audio.url, strapi);
+    if (!buffer) return null;
 
-    if (!fs.existsSync(filePath)) return null;
-
-    const buffer = fs.readFileSync(filePath);
     return computePeaksFromBuffer(buffer);
   },
 
@@ -88,17 +122,13 @@ const peaks = ({ strapi }) => ({
     for (const song of songs) {
       if (!song.audio?.url) continue;
 
-      const uploadsDir = path.join(strapi.dirs.static.public, 'uploads');
-      const fileName = path.basename(song.audio.url);
-      const filePath = path.join(uploadsDir, fileName);
-
-      if (!fs.existsSync(filePath)) {
-        strapi.log.warn(`[peaks] Audio file not found for "${song.title}": ${filePath}`);
-        continue;
-      }
-
       try {
-        const buffer = fs.readFileSync(filePath);
+        const buffer = await resolveAudioBuffer(song.audio.url, strapi);
+        if (!buffer) {
+          strapi.log.warn(`[peaks] Could not resolve audio for "${song.title}": ${song.audio.url}`);
+          continue;
+        }
+
         const peaksData = await computePeaksFromBuffer(buffer);
 
         await strapi.db.query('plugin::strapi-plugin-music-manager.song').updateMany({

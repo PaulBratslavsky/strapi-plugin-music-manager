@@ -13,11 +13,20 @@ const MIME_TYPES: Record<string, string> = {
 
 let widgetCache: string | null = null;
 
+/**
+ * Check if a URL is a remote (absolute) URL vs a local relative path.
+ */
+function isRemoteUrl(url: string): boolean {
+  return url.startsWith('http://') || url.startsWith('https://');
+}
+
 const stream = ({ strapi }) => ({
   /**
    * Stream audio by song documentId.
    * GET /songs/:id/stream
-   * Matches the reference frontend: `${strapiBase}/api/songs/${documentId}/stream`
+   *
+   * - Local uploads: streams from disk with range request support
+   * - Remote uploads (Strapi Cloud, S3, etc.): redirects to the media URL
    */
   async streamAudio(ctx) {
     const { id } = ctx.params;
@@ -34,8 +43,18 @@ const stream = ({ strapi }) => ({
       return;
     }
 
+    const audioUrl = entry.audio.url;
+
+    // Remote file (Strapi Cloud, S3, etc.) — redirect
+    if (isRemoteUrl(audioUrl)) {
+      ctx.set('Access-Control-Allow-Origin', '*');
+      ctx.redirect(audioUrl);
+      return;
+    }
+
+    // Local file — stream from disk
     const uploadsDir = path.join(strapi.dirs.static.public, 'uploads');
-    const fileName = path.basename(entry.audio.url);
+    const fileName = path.basename(audioUrl);
     const filePath = path.join(uploadsDir, fileName);
 
     if (!fs.existsSync(filePath)) {
