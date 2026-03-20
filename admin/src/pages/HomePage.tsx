@@ -12,6 +12,9 @@ import {
   Flex,
   Button,
   Pagination,
+  PreviousLink,
+  NextLink,
+  PageLink,
   SearchForm,
   Searchbar,
   Badge,
@@ -328,8 +331,30 @@ const HomePage = () => {
               <Pagination
                 pageCount={pagination.pageCount}
                 activePage={page}
-                onPageChange={setPage}
-              />
+              >
+                <PreviousLink
+                  href="#"
+                  onClick={(e: React.MouseEvent) => { e.preventDefault(); setPage((p: number) => Math.max(1, p - 1)); }}
+                >
+                  Previous
+                </PreviousLink>
+                {Array.from({ length: pagination.pageCount }, (_, i) => (
+                  <PageLink
+                    key={i + 1}
+                    href="#"
+                    number={i + 1}
+                    onClick={(e: React.MouseEvent) => { e.preventDefault(); setPage(i + 1); }}
+                  >
+                    {i + 1}
+                  </PageLink>
+                ))}
+                <NextLink
+                  href="#"
+                  onClick={(e: React.MouseEvent) => { e.preventDefault(); setPage((p: number) => Math.min(pagination.pageCount, p + 1)); }}
+                >
+                  Next
+                </NextLink>
+              </Pagination>
             </Flex>
           </Box>
         )}

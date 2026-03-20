@@ -44,6 +44,14 @@ export default {
       },
     },
     {
+      method: 'GET',
+      path: '/widget.js',
+      handler: 'stream.serveWidget',
+      config: {
+        policies: [],
+      },
+    },
+    {
       method: 'POST',
       path: '/songs/generate-peaks',
       handler: 'stream.generatePeaks',

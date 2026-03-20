@@ -11,6 +11,8 @@ const MIME_TYPES: Record<string, string> = {
   '.webm': 'audio/webm',
 };
 
+let widgetCache: string | null = null;
+
 const stream = ({ strapi }) => ({
   /**
    * Stream audio by song documentId.
@@ -66,6 +68,39 @@ const stream = ({ strapi }) => ({
       ctx.set('Content-Length', String(fileSize));
       ctx.body = fs.createReadStream(filePath);
     }
+  },
+
+  /**
+   * Serve the embeddable widget JavaScript bundle.
+   * GET /widget.js
+   */
+  async serveWidget(ctx) {
+    const pluginRoot = path.resolve(__dirname, '..', '..');
+    const widgetPath = path.join(pluginRoot, 'dist', 'widget', 'widget.js');
+
+    if (!fs.existsSync(widgetPath)) {
+      ctx.status = 404;
+      ctx.type = 'application/javascript';
+      ctx.body = '// Widget not built. Run: npm run build:widget';
+      return;
+    }
+
+    if (!widgetCache || process.env.NODE_ENV === 'development') {
+      try {
+        widgetCache = fs.readFileSync(widgetPath, 'utf-8');
+      } catch (error) {
+        strapi.log.error('Failed to read widget file:', error);
+        ctx.status = 500;
+        ctx.type = 'application/javascript';
+        ctx.body = '// Error loading widget';
+        return;
+      }
+    }
+
+    ctx.type = 'application/javascript';
+    ctx.set('Cache-Control', process.env.NODE_ENV === 'development' ? 'no-cache' : 'public, max-age=3600');
+    ctx.set('Access-Control-Allow-Origin', '*');
+    ctx.body = widgetCache;
   },
 
   /**

@@ -63,6 +63,14 @@ export default {
     });
   },
 
+  bootstrap() {
+    // Inject the floating music player widget into the admin panel
+    const script = document.createElement("script");
+    script.src = `${window.location.origin}/api/${PLUGIN_ID}/widget.js?v=${Date.now()}`;
+    script.async = true;
+    document.body.appendChild(script);
+  },
+
   async registerTrads({ locales }: { locales: string[] }) {
     return Promise.all(
       locales.map(async (locale) => {

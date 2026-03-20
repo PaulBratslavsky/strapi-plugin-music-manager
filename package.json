@@ -1,8 +1,18 @@
 {
   "name": "strapi-plugin-music-manager",
-  "version": "0.0.5",
-  "description": "A custom field plugin for uploading, managing, and streaming music with waveform visualization",
-  "keywords": [],
+  "version": "0.1.0",
+  "description": "A Strapi v5 plugin for managing music with audio streaming, waveform visualization, and an embeddable player widget",
+  "keywords": [
+    "strapi",
+    "strapi-plugin",
+    "music",
+    "audio",
+    "waveform",
+    "wavesurfer",
+    "streaming",
+    "player",
+    "widget"
+  ],
   "type": "commonjs",
   "exports": {
     "./package.json": "./package.json",
@@ -23,7 +33,9 @@
   },
   "files": ["dist"],
   "scripts": {
-    "build": "strapi-plugin build",
+    "build": "strapi-plugin build && npm run build:widget",
+    "build:widget": "vite build --config widget/vite.config.mts",
+    "dev:widget": "vite build --config widget/vite.config.mts --watch",
     "watch": "strapi-plugin watch",
     "watch:link": "strapi-plugin watch:link",
     "verify": "strapi-plugin verify",
@@ -31,7 +43,9 @@
     "test:ts:back": "run -T tsc -p server/tsconfig.json"
   },
   "dependencies": {
-    "audio-decode": "^2.2.3"
+    "audio-decode": "^2.2.3",
+    "wavesurfer.js": "^7.12.2",
+    "qs": "^6.15.0"
   },
   "devDependencies": {
     "@strapi/strapi": "*",
@@ -41,6 +55,10 @@
     "@strapi/typescript-utils": "*",
     "@types/react": "*",
     "@types/react-dom": "*",
+    "vite": "^6.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "terser": "^5.0.0",
+    "@types/qs": "^6.0.0",
     "prettier": "*",
     "react": "^17.0.0 || ^18.0.0",
     "react-dom": "^17.0.0 || ^18.0.0",
