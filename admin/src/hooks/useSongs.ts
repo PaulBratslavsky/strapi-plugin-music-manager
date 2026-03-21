@@ -9,6 +9,7 @@ export interface Song {
   createdAt: string;
   updatedAt: string;
   peaks?: number[] | null;
+  duration?: number | null;
   artist?: {
     id: number;
     documentId: string;

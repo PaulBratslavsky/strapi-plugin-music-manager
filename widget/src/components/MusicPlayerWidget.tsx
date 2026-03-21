@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { usePlayerState } from '../hooks/usePlayerState'
 import { formatTime, getStrapiMedia } from '../api'
-import { PlayIcon, PauseIcon, PrevIcon, NextIcon, RestartIcon, LoopIcon, ShuffleIcon } from '../icons'
+import { PlayIcon, PauseIcon, PrevIcon, NextIcon, RestartIcon, LoopIcon, ShuffleIcon, ShareIcon } from '../icons'
 import { SongRow } from './SongRow'
 import type { PlayerState } from '../hooks/usePlayerState'
 import type { LoopMode } from '../types'
@@ -113,6 +113,7 @@ export function MusicPlayerWidget({ strapiUrl, initialSong }: MusicPlayerWidgetP
                   <PhoneIcon />
                 </button>
                 <div className="smw-header-sep" />
+                <ShareHeaderButton strapiUrl={player.strapiUrl} />
                 <button className="smw-header-btn" onClick={() => setView('minimized')} aria-label="Minimize" title="Minimize">
                   <MinimizeIcon />
                 </button>
@@ -384,6 +385,33 @@ function LoopButton({ loopMode, onClick }: { loopMode: LoopMode; onClick: () => 
     <button onClick={onClick} type="button" aria-label={`Loop: ${loopMode}`} className={cls}>
       <LoopIcon />
       {loopMode === 'one' && <span className="smw-loop-badge">1</span>}
+    </button>
+  )
+}
+
+function ShareHeaderButton({ strapiUrl }: { strapiUrl: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleShare = () => {
+    const url = `${strapiUrl}/api/strapi-plugin-music-manager/embed?mode=full`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }).catch(() => {
+      window.open(url, '_blank')
+    })
+  }
+
+  return (
+    <button
+      className="smw-header-btn"
+      onClick={handleShare}
+      aria-label="Share player"
+      title={copied ? 'Link copied!' : 'Share player'}
+    >
+      {copied
+        ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}><polyline points="20 6 9 17 4 12" /></svg>
+        : <ShareIcon size={16} />}
     </button>
   )
 }

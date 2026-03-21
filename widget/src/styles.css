@@ -301,7 +301,7 @@
 .smw-panel-body {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -550,17 +550,54 @@
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
-  border: none;
   border-bottom: 1px solid #1a1a1a;
   background: transparent;
   color: #fff;
-  text-align: left;
-  cursor: pointer;
   transition: background 0.15s;
   font-family: inherit;
   font-size: 13px;
+}
+
+.smw-song-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 16px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.smw-song-share {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-right: 8px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.smw-song-row:hover .smw-song-share {
+  opacity: 1;
+}
+
+.smw-song-share:hover {
+  color: #ec4899;
+  background: rgba(236, 72, 153, 0.1);
 }
 
 .smw-song-row:last-child {
@@ -573,6 +610,15 @@
 
 .smw-song-row--active {
   background: rgba(236, 72, 153, 0.15);
+}
+
+.smw-song-row--active .smw-song-share {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.smw-song-row--active .smw-song-share:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .smw-song-row--active:hover {

@@ -226,11 +226,24 @@ function drawWaveform(
   canvas.height = rect.height * dpr;
   ctx.scale(dpr, dpr);
 
-  const barCount = peaks.length;
-  const totalBarSpace = rect.width / barCount;
-  const barWidth = totalBarSpace * 0.65;
-  const barGap = totalBarSpace * 0.35;
+  // Fixed bar dimensions — downsample peaks to fit
+  const barWidth = 4;
+  const barGap = 1;
+  const barCount = Math.floor(rect.width / (barWidth + barGap));
   const maxHeight = rect.height * 0.9;
+
+  // Downsample peaks to match bar count
+  const sampledPeaks: number[] = [];
+  const ratio = peaks.length / barCount;
+  for (let i = 0; i < barCount; i++) {
+    const start = Math.floor(i * ratio);
+    const end = Math.floor((i + 1) * ratio);
+    let max = 0;
+    for (let j = start; j < end; j++) {
+      if (peaks[j] > max) max = peaks[j];
+    }
+    sampledPeaks.push(max);
+  }
 
   ctx.clearRect(0, 0, rect.width, rect.height);
 
@@ -239,7 +252,7 @@ function drawWaveform(
 
   for (let i = 0; i < barCount; i++) {
     const x = i * (barWidth + barGap);
-    const barHeight = Math.max(2, peaks[i] * maxHeight);
+    const barHeight = Math.max(2, sampledPeaks[i] * maxHeight);
     const y = rect.height - barHeight;
     const progressPoint = progress * barCount;
 
@@ -278,18 +291,18 @@ export function MusicPlayerWidget() {
     }
   }, [songs, currentSong]);
 
-  // Preload durations for all songs
+  // Use pre-computed durations from API data
   useEffect(() => {
-    songs.forEach((song) => {
-      if (!song.audio?.url || durations[song.documentId]) return;
-      const audio = new Audio();
-      audio.preload = 'metadata';
-      audio.addEventListener('loadedmetadata', () => {
-        setDurations((prev) => ({ ...prev, [song.documentId]: audio.duration }));
-      });
-      audio.src = song.audio.url;
-    });
-  }, [songs]); // eslint-disable-line react-hooks/exhaustive-deps
+    const precomputed: Record<string, number> = {};
+    for (const song of songs) {
+      if (song.duration) {
+        precomputed[song.documentId] = song.duration;
+      }
+    }
+    if (Object.keys(precomputed).length > 0) {
+      setDurations((prev) => ({ ...prev, ...precomputed }));
+    }
+  }, [songs]);
 
   const updateWaveform = useCallback(() => {
     if (!canvasRef.current || !currentSong?.peaks?.length) return;
