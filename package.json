@@ -1,6 +1,6 @@
 {
   "name": "strapi-plugin-music-manager",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A Strapi v5 plugin for managing music with audio streaming, waveform visualization, and an embeddable player widget",
   "keywords": [
     "strapi",
@@ -31,7 +31,9 @@
       "default": "./dist/server/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "strapi-plugin build && npm run build:widget && npm run build:embed",
     "build:widget": "vite build --config widget/vite.config.mts",
@@ -76,7 +78,7 @@
     "@strapi/icons": "*",
     "react": "^17.0.0 || ^18.0.0",
     "react-dom": "^17.0.0 || ^18.0.0",
-    "react-intl": "^6.0.0",
+    "react-intl": "^6.0.0 || ^7.0.0",
     "react-router-dom": "^6.0.0",
     "styled-components": "^6.0.0"
   },
